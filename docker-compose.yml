@@ -8,11 +8,12 @@ services:
       - ./bacpac:/app/bacpac
     environment:
       # Auto export from Azure (set to 'true' to enable)
-      - AUTO_EXPORT=false
-      - AZURE_SERVER=your-server.database.windows.net
-      - AZURE_DATABASE=contractregistry
-      - AZURE_USERNAME=your-username
-      - AZURE_PASSWORD=your-password
+      - AUTO_EXPORT=true
+      - AZURE_SERVER=""
+      - AZURE_DATABASE=""
+      - AZURE_USERNAME=""
+      - AZURE_PASSWORD=""
+      - BACPAC_FILENAME=contractregistry.bacpac
       # Existing settings
       - BACPAC_FILE=/app/bacpac/contractregistry.bacpac
       - MODEL_FILE=/app/model.xml

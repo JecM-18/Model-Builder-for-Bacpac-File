@@ -10,13 +10,13 @@ A Python tool to merge SQL Server bacpac model.xml with a base model, removing b
 - Docker support
 
 ## Usage
-
+<!-- model name should be model.xml -->
 ### Docker
 ```bash
 # Run Every time theres a changes in Script/Code
 docker-compose down --remove-orphans
-docker-compose build --no-cache  
 # Run Backup/Model Builder
+docker-compose build --no-cache  
 docker-compose run --rm model-sync
 ```
 

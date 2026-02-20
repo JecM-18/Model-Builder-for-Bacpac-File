@@ -481,6 +481,7 @@ def main():
     model_file = os.environ.get('MODEL_FILE', 'model.xml')
     output_dir = os.environ.get('OUTPUT_DIR', './output')
     bacpac_dir = os.environ.get('BACPAC_DIR', './bacpac')
+    bacpac_filename = os.environ.get('BACPAC_FILENAME', 'database.bacpac')
     
     print(f"AUTO_EXPORT: {auto_export}")
     print(f"AZURE_SERVER: {azure_server}")
@@ -491,7 +492,7 @@ def main():
     
     # Auto export from Azure if enabled
     if auto_export and azure_server and azure_database and azure_username and azure_password:
-        bacpac_file = os.path.join(bacpac_dir, "contractregistry.bacpac")
+        bacpac_file = os.path.join(bacpac_dir, bacpac_filename)
         export_success = export_bacpac_from_azure(
             azure_server,
             azure_database,
