@@ -239,6 +239,11 @@ def export_bacpac_from_azure(server, database, username, password, output_path):
     # Ensure output directory exists
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     
+    # Delete existing bacpac file if it exists
+    if os.path.exists(output_path):
+        print(f"[*] Removing existing bacpac: {output_path}")
+        os.remove(output_path)
+    
     # Build connection string
     connection_string = (
         f"Server=tcp:{server},1433;"
