@@ -8,6 +8,8 @@ import hashlib
 import re
 from datetime import datetime
 import subprocess
+import threading
+import time
 
 # Define namespace
 NS = {'ns': 'http://schemas.microsoft.com/sqlserver/dac/Serialization/2012/02'}
@@ -229,7 +231,7 @@ def merge_models(base_tree, base_root, new_root):
     return added_tables, added_columns, added_columns_list
 
 def export_bacpac_from_azure(server, database, username, password, output_path):
-    """Export bacpac from Azure SQL Database using SqlPackage."""
+    """Export bacpac from Azure SQL Database using SqlPackage with progress indicator."""
     print("="*60)
     print("EXPORTING BACPAC FROM AZURE")
     print("="*60)
@@ -262,34 +264,95 @@ def export_bacpac_from_azure(server, database, username, password, output_path):
     
     print(f"\n[*] Exporting from: {server}/{database}")
     print(f"[*] Output: {output_path}")
-    print(f"[*] This may take several minutes...")
+    print(f"[*] This may take several minutes...\n")
+    
+    # Progress bar state
+    progress = {"running": True, "phase": "Connecting", "elapsed": 0}
+    
+    def progress_bar():
+        """Display animated progress bar."""
+        phases = [
+            "Connecting to database",
+            "Analyzing schema",
+            "Exporting tables",
+            "Exporting data",
+            "Compressing bacpac",
+            "Finalizing"
+        ]
+        phase_idx = 0
+        spinner = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+        spinner_idx = 0
+        start_time = time.time()
+        
+        while progress["running"]:
+            elapsed = int(time.time() - start_time)
+            progress["elapsed"] = elapsed
+            
+            # Change phase every 30 seconds for visual feedback
+            phase_idx = min(elapsed // 30, len(phases) - 1)
+            current_phase = phases[phase_idx]
+            
+            # Create progress bar
+            bar_width = 30
+            filled = int((elapsed % 60) / 60 * bar_width)
+            bar = '█' * filled + '░' * (bar_width - filled)
+            
+            # Format elapsed time
+            mins, secs = divmod(elapsed, 60)
+            time_str = f"{mins:02d}:{secs:02d}"
+            
+            # Print progress
+            sys.stdout.write(f"\r{spinner[spinner_idx]} [{bar}] {time_str} | {current_phase}...")
+            sys.stdout.flush()
+            
+            spinner_idx = (spinner_idx + 1) % len(spinner)
+            time.sleep(0.1)
+        
+        # Clear the progress line
+        sys.stdout.write("\r" + " " * 80 + "\r")
+        sys.stdout.flush()
+    
+    # Start progress bar in background thread
+    progress_thread = threading.Thread(target=progress_bar, daemon=True)
+    progress_thread.start()
     
     try:
         result = subprocess.run(
             cmd,
             capture_output=True,
-            text=True,
-            timeout=1800  # 30 minute timeout
+            text=True
+            # timeout removed
         )
         
+        # Stop progress bar
+        progress["running"] = False
+        progress_thread.join(timeout=1)
+        
+        elapsed = progress["elapsed"]
+        mins, secs = divmod(elapsed, 60)
+        
         if result.returncode == 0:
-            print(f"[✓] Export successful!")
-            print(f"    File size: {os.path.getsize(output_path) / (1024*1024):.2f} MB")
+            file_size = os.path.getsize(output_path) / (1024*1024)
+            print(f"\n[✓] Export successful!")
+            print(f"    Time: {mins}m {secs}s")
+            print(f"    File size: {file_size:.2f} MB")
             return True
         else:
-            print(f"[✗] Export failed!")
+            print(f"\n[✗] Export failed!")
+            print(f"    Time: {mins}m {secs}s")
             print(f"    Error: {result.stderr}")
             return False
             
-    except subprocess.TimeoutExpired:
-        print(f"[✗] Export timed out after 30 minutes")
-        return False
     except FileNotFoundError:
-        print(f"[✗] SqlPackage not found. Please install it or add to PATH.")
+        progress["running"] = False
+        progress_thread.join(timeout=1)
+        print(f"\n[✗] SqlPackage not found. Please install it or add to PATH.")
         print(f"    Download: https://docs.microsoft.com/en-us/sql/tools/sqlpackage-download")
         return False
     except Exception as e:
-        print(f"[✗] Export error: {e}")
+        progress["running"] = False
+        progress_thread.join(timeout=1)
+        print(f"\n[✗] Export error: {e}")
         return False
 
 def process_bacpac(bacpac_path, base_model_path, output_dir=None):
