@@ -1,0 +1,21 @@
+# Output files
+output/
+bacpac/
+*.bacpac
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Extracted data
+*_extracted/
+
+# IDE
+.vscode/
+.idea/
+
+# Sensitive data
+*.xml
+!docker-compose.yml

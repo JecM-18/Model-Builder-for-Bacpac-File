@@ -1,0 +1,22 @@
+services:
+  model-sync:
+    build: .
+    container_name: bacpac-model-sync
+    volumes:
+      - ./model.xml:/app/model.xml:ro
+      - ./output:/app/output
+      - ./bacpac:/app/bacpac
+    environment:
+      # Auto export from Azure (set to 'true' to enable)
+      - AUTO_EXPORT=false
+      - AZURE_SERVER=your-server.database.windows.net
+      - AZURE_DATABASE=contractregistry
+      - AZURE_USERNAME=your-username
+      - AZURE_PASSWORD=your-password
+      # Existing settings
+      - BACPAC_FILE=/app/bacpac/contractregistry.bacpac
+      - MODEL_FILE=/app/model.xml
+      - OUTPUT_DIR=/app/output
+      - BACPAC_DIR=/app/bacpac
+    stdin_open: true
+    tty: true

@@ -1,0 +1,10 @@
+__pycache__
+*.pyc
+*.pyo
+.git
+.gitignore
+*.md
+output/
+data/
+*.xml
+!compare_models.py
